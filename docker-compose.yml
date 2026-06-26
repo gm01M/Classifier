@@ -59,8 +59,10 @@ services:
     build:
       context: ./classifier
       args:
-        # INSTALL_TORCH=false builds a lightweight stub-only image (no CUDA stack).
+        # INSTALL_TORCH=false builds a lightweight stub-only image (no ML stack).
         INSTALL_TORCH: ${INSTALL_TORCH:-true}
+        # cu121 (default, NVIDIA GPUs) or .../whl/cpu (CPU / very new GPUs like Blackwell).
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu121}
     image: photoplatform/classifier:dev
     env_file: .env
     environment:

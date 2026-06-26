@@ -1,31 +1,37 @@
 {% extends "base.html" %}
-{% block title %}My submissions{% endblock %}
+{% block title %}Verification history{% endblock %}
 {% block content %}
 <div class="row between">
-  <h1>My submissions</h1>
-  <a class="primary button" href="{% url 'submissions:create' %}">+ New submission</a>
+  <h1>Submission history</h1>
+  {% if user.is_verified or user.is_staff %}
+    <a class="primary button" href="{% url 'submissions:submit' %}">+ New submission</a>
+  {% else %}
+    <a class="primary button" href="{% url 'verify:start' %}">Verify now</a>
+  {% endif %}
 </div>
 
 {% if submissions %}
 <table class="data">
   <thead>
-    <tr><th>Name</th><th>Age</th><th>Gender</th><th>Country</th><th>Status</th><th>Created</th><th></th></tr>
+    <tr><th>When</th><th>Status</th><th>Consistency</th><th>Predicted</th><th></th></tr>
   </thead>
   <tbody>
     {% for s in submissions %}
     <tr>
-      <td>{{ s.name }}</td>
-      <td>{{ s.age }}</td>
-      <td>{{ s.get_gender_display }}</td>
-      <td>{{ s.country_of_origin }}</td>
-      <td><span class="badge {{ s.status }}">{{ s.get_status_display }}</span></td>
       <td>{{ s.created_at|date:"Y-m-d H:i" }}</td>
+      <td><span class="badge {{ s.status }}">{{ s.get_status_display }}</span></td>
+      <td><span class="badge {{ s.consistency }}">{{ s.get_consistency_display }}</span></td>
+      <td>
+        {% if s.classification_result.predictions %}
+          {% for p in s.classification_result.predictions %}{{ p.attribute }}: {{ p.label }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% else %}—{% endif %}
+      </td>
       <td><a href="{% url 'submissions:detail' s.pk %}">View</a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 {% else %}
-<p class="muted">No submissions yet. Create your first one.</p>
+<p class="muted">No verification attempts yet.</p>
 {% endif %}
 {% endblock %}

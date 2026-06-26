@@ -10,13 +10,18 @@ polling; once DONE/FAILED/REJECTED it renders the final state and drops polling.
   {% if submission.status == "pending" %}
     <p class="muted">⏳ Classifying… this updates automatically.</p>
   {% elif submission.status == "done" %}
+    <p>Verification:
+      <span class="badge {{ submission.consistency }}">{{ submission.get_consistency_display }}</span>
+      {% with v=submission.verification %}{% if v.reasons %}<span class="muted"> — {{ v.reasons|join:"; " }}</span>{% endif %}{% endwith %}
+    </p>
     <table class="data">
-      <thead><tr><th>Attribute</th><th>Prediction</th><th>Confidence</th></tr></thead>
+      <thead><tr><th>Attribute</th><th>Predicted (photo)</th><th>Claimed</th><th>Confidence</th></tr></thead>
       <tbody>
         {% for item in submission.classification_result.predictions %}
         <tr>
           <td>{{ item.attribute }}</td>
           <td>{{ item.label }}</td>
+          <td>{% if item.attribute == "age" %}{{ submission.age }}{% elif item.attribute == "gender" %}{{ submission.get_gender_display }}{% else %}—{% endif %}</td>
           <td>{{ item.score|floatformat:3 }}</td>
         </tr>
         {% endfor %}

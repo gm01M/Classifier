@@ -1,0 +1,42 @@
+{% comment %}
+Verification status partial. Keeps polling while PENDING; stops on a final state.
+{% endcomment %}
+<div id="vstatus"
+     {% if pending %}hx-get="{% url 'verify:status' submission.pk %}"
+     hx-trigger="every 1.5s" hx-swap="outerHTML"{% endif %}>
+
+  {% if pending %}
+    <p class="verify-state">⏳ Verifying your photo against your profile…</p>
+    <p class="muted">Analysing the captured image. This updates automatically.</p>
+
+  {% elif verified %}
+    <p class="verify-state ok">✅ Verification successful</p>
+    <p class="muted">Your photo is consistent with your profile. You're verified.</p>
+    <a class="primary button" href="{% url 'submissions:home' %}">Enter the platform →</a>
+
+  {% elif rejected %}
+    <p class="verify-state err">🚫 Photo rejected by safety screening</p>
+    <p class="muted">{{ submission.error_detail }}</p>
+    <a class="primary button" href="{% url 'verify:start' %}">Try again</a>
+
+  {% elif failed_tech %}
+    <p class="verify-state err">⚠️ Could not complete verification</p>
+    <p class="muted">{{ submission.error_detail }}</p>
+    <a class="primary button" href="{% url 'verify:start' %}">Try again</a>
+
+  {% elif inconsistent %}
+    <p class="verify-state err">❌ Verification failed</p>
+    <p class="muted">The photo doesn't match your profile
+      {% with v=submission.verification %}{% if v.reasons %}({{ v.reasons|join:"; " }}){% endif %}{% endwith %}.</p>
+    {% if locked %}
+      <p class="error">You've reached the attempt limit. Your account is locked pending admin review.</p>
+      <a class="button" href="{% url 'verify:locked' %}">More info</a>
+    {% else %}
+      <p class="muted">{{ attempts_remaining }} attempt{{ attempts_remaining|pluralize }} remaining.</p>
+      <a class="primary button" href="{% url 'verify:start' %}">Try again</a>
+    {% endif %}
+
+  {% else %}
+    <p class="verify-state">Processing…</p>
+  {% endif %}
+</div>

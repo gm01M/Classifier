@@ -47,6 +47,8 @@ class SubmissionSerializer(serializers.ModelSerializer):
             "photo_url",
             "status",
             "classification_result",
+            "consistency",
+            "verification",
             "error_detail",
             "created_at",
             "updated_at",

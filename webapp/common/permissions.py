@@ -10,6 +10,24 @@ class IsAdminUserRole(BasePermission):
         return bool(request.user and request.user.is_staff)
 
 
+class IsVerifiedUser(BasePermission):
+    """Allow only identity-verified (or staff) users.
+
+    Mirrors the web verification gate on the API: an authenticated user must have
+    passed the camera identity check before they can submit via the API.
+    """
+
+    message = "Identity verification required before submitting."
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (user.is_staff or getattr(user, "is_verified", False))
+        )
+
+
 class IsOwnerOrAdmin(BasePermission):
     """Object-level: owners may access their own records; admins may access all."""
 

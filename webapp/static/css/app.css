@@ -43,3 +43,13 @@ dl.meta dt { color: var(--muted); }
 .footer { text-align: center; color: var(--muted); padding: 2rem; font-size: .85rem; }
 pre.json { background: #0b1220; padding: .75rem; border-radius: 6px; overflow-x: auto; font-size: .8rem; }
 .messages { list-style: none; padding: 0; }
+.badge.consistent { background: #052e16; color: var(--ok); }
+.badge.inconsistent { background: #450a0a; color: var(--err); }
+.badge.unverified, .badge.pending { background: #422006; color: var(--warn); }
+.camwrap { background: #000; border-radius: 10px; overflow: hidden; border: 1px solid var(--line);
+  aspect-ratio: 4 / 3; display: flex; align-items: center; justify-content: center; }
+.camwrap video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.button { display: inline-block; padding: .55rem 1rem; border-radius: 6px; border: 1px solid var(--line);
+  color: var(--text); margin-top: .5rem; }
+.verify-state { font-size: 1.2rem; font-weight: 600; margin: .5rem 0; }
+.verify-state.ok { color: var(--ok); } .verify-state.err { color: var(--err); }

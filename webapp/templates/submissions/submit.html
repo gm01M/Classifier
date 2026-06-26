@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}New submission{% endblock %}
+{% block content %}
+<div class="card narrow" style="max-width:560px">
+  <h1>New submission</h1>
+  <p class="muted">Capture a photo with your camera or upload one. Each submission
+    is classified and cross-checked against your profile.</p>
+
+  {% url 'submissions:submit-capture' as cap_url %}
+  {% include "partials/capture_widget.html" with capture_url=cap_url submit_label="Capture & classify" %}
+
+  <p class="muted">Uploaded images are validated, EXIF-stripped, and screened before classification.</p>
+</div>
+{% endblock %}

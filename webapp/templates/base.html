@@ -13,8 +13,13 @@
     <a class="brand" href="{% url 'submissions:list' %}">📸 PhotoClass</a>
     <nav>
       {% if user.is_authenticated %}
-        <a href="{% url 'submissions:list' %}">My submissions</a>
-        <a href="{% url 'submissions:create' %}">New submission</a>
+        {% if user.is_staff or user.is_verified %}
+          <a href="{% url 'submissions:home' %}">Platform</a>
+          <a href="{% url 'submissions:submit' %}">New submission</a>
+          <a href="{% url 'submissions:list' %}">History</a>
+        {% else %}
+          <a href="{% url 'verify:start' %}">Verify</a>
+        {% endif %}
         <a href="{% url 'accounts:profile' %}">My profile</a>
         {% if user.is_staff %}<a href="{% url 'admin_panel:list' %}">Admin panel</a>{% endif %}
         <span class="who">{{ user.email }}</span>

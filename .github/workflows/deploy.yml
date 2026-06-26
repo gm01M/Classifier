@@ -1,0 +1,94 @@
+name: Deploy to DigitalOcean
+
+# Build → push to DOCR → roll out to DOKS on every push to main.
+# Requires one repo secret: DIGITALOCEAN_ACCESS_TOKEN (read+write DO API token).
+# Cluster-level setup (cluster, registry integration, namespace, platform-secrets,
+# nginx-ingress) is provisioned out-of-band; this workflow only ships the app.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-do
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: registry.digitalocean.com/gm01m-bip
+  CLUSTER: bip-cluster
+  NAMESPACE: photoplatform
+
+jobs:
+  deploy:
+    name: Build, push & roll out
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+
+      - name: Log in to DOCR
+        run: doctl registry login --expiry-seconds 1800
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build & push webapp
+        uses: docker/build-push-action@v6
+        with:
+          context: ./webapp
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/webapp:${{ github.sha }}
+            ${{ env.REGISTRY }}/webapp:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push classifier (real model, CPU torch)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./classifier
+          build-args: |
+            INSTALL_TORCH=true
+            TORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/classifier:${{ github.sha }}
+            ${{ env.REGISTRY }}/classifier:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Configure kubectl
+        run: doctl kubernetes cluster kubeconfig save "$CLUSTER"
+
+      - name: Deploy (migrate + roll out)
+        run: |
+          set -euo pipefail
+          # Re-run migrations on the fresh image: the Job's pod template is
+          # immutable, so delete then recreate it via the kustomize apply.
+          kubectl -n "$NAMESPACE" delete job webapp-migrate --ignore-not-found
+          kubectl apply -k k8s/overlays/do
+
+          # Pin every workload to the immutable per-commit tag (forces a rollout).
+          kubectl -n "$NAMESPACE" set image deployment/webapp     webapp="$REGISTRY/webapp:${{ github.sha }}"
+          kubectl -n "$NAMESPACE" set image deployment/worker     worker="$REGISTRY/webapp:${{ github.sha }}"
+          kubectl -n "$NAMESPACE" set image deployment/classifier classifier="$REGISTRY/classifier:${{ github.sha }}"
+
+          kubectl -n "$NAMESPACE" wait --for=condition=complete job/webapp-migrate --timeout=420s
+          kubectl -n "$NAMESPACE" rollout status deployment/webapp     --timeout=300s
+          kubectl -n "$NAMESPACE" rollout status deployment/worker     --timeout=300s
+          kubectl -n "$NAMESPACE" rollout status deployment/classifier --timeout=600s
+
+      - name: Access info
+        if: always()
+        run: |
+          echo "Ingress LoadBalancer:"
+          kubectl -n ingress-nginx get svc ingress-nginx-controller \
+            -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true
+          echo

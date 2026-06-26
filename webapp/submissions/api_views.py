@@ -17,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 
-from common.permissions import IsAdminUserRole, IsOwnerOrAdmin
+from common.permissions import IsAdminUserRole, IsOwnerOrAdmin, IsVerifiedUser
 
 from .filters import SubmissionFilter
 from .models import Submission
@@ -34,6 +34,12 @@ class SubmissionViewSet(
     """User-facing submissions: create + read your own."""
 
     permission_classes = [IsAuthenticated, IsOwnerOrAdmin]
+
+    def get_permissions(self):
+        # Submitting requires identity verification (same gate as the web /submit/).
+        if self.action == "create":
+            return [IsAuthenticated(), IsVerifiedUser()]
+        return super().get_permissions()
 
     def get_queryset(self):
         # Users see only their own; admins see all.
@@ -78,6 +84,8 @@ class SubmissionViewSet(
                 "id": str(submission.id),
                 "status": submission.status,
                 "classification_result": submission.classification_result,
+                "consistency": submission.consistency,
+                "verification": submission.verification,
                 "error_detail": submission.error_detail,
             }
         )

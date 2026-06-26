@@ -13,7 +13,7 @@ from django.db import models
 
 from common.choices import AGE_VALIDATORS, Gender
 
-__all__ = ["Gender", "Status", "Submission"]
+__all__ = ["Consistency", "Gender", "Status", "Submission"]
 
 
 class Status(models.TextChoices):
@@ -21,6 +21,15 @@ class Status(models.TextChoices):
     DONE = "done", "Done"
     FAILED = "failed", "Failed"
     REJECTED = "rejected", "Rejected (safety)"
+
+
+class Consistency(models.TextChoices):
+    """Result of cross-checking the photo prediction against the claimed profile."""
+
+    PENDING = "pending", "Pending"
+    CONSISTENT = "consistent", "Consistent"
+    INCONSISTENT = "inconsistent", "Inconsistent"
+    UNVERIFIED = "unverified", "Unverified"
 
 
 class Submission(models.Model):
@@ -48,6 +57,12 @@ class Submission(models.Model):
     classification_result = models.JSONField(null=True, blank=True)
     error_detail = models.CharField(max_length=255, blank=True)
 
+    # Verification: does the photo prediction match the self-reported profile?
+    consistency = models.CharField(
+        max_length=12, choices=Consistency.choices, default=Consistency.PENDING
+    )
+    verification = models.JSONField(null=True, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -60,6 +75,7 @@ class Submission(models.Model):
             models.Index(fields=["place_of_living"], name="sub_place_idx"),
             models.Index(fields=["created_at"], name="sub_created_idx"),
             models.Index(fields=["status"], name="sub_status_idx"),
+            models.Index(fields=["consistency"], name="sub_consistency_idx"),
             # Composite index for the common admin filter combination.
             models.Index(
                 fields=["gender", "country_of_origin", "age"],

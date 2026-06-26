@@ -15,7 +15,8 @@ from celery import shared_task
 from classification.client import ClassifierError, SafetyRejection, classify_image
 from common.storage import get_object_bytes
 
-from .models import Status, Submission
+from .models import Consistency, Status, Submission
+from .verification import evaluate
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +53,55 @@ def classify_submission(self, submission_id: str) -> str:
             return "failed"
         raise
 
+    # Verify the prediction against the self-reported profile snapshot.
+    consistency, details = evaluate(
+        claimed_age=submission.age,
+        claimed_gender=submission.gender,
+        result=result,
+    )
+
     submission.status = Status.DONE
     submission.classification_result = result
+    submission.consistency = consistency
+    submission.verification = details
     submission.error_detail = ""
-    submission.save(update_fields=["status", "classification_result", "error_detail"])
+    submission.save(
+        update_fields=[
+            "status",
+            "classification_result",
+            "consistency",
+            "verification",
+            "error_detail",
+        ]
+    )
+
+    _update_user_verification(submission.owner, consistency)
     return "done"
+
+
+def _update_user_verification(user, consistency: str) -> None:
+    """Update the verification gate from the latest finished submission.
+
+    The most recent result governs ("count the last one"):
+      * CONSISTENT   -> verified, and the consecutive-failure counter resets.
+      * INCONSISTENT -> verification revoked, and a strike is recorded; after
+                        MAX_VERIFICATION_ATTEMPTS consecutive strikes the user is
+                        locked (see User.is_verification_locked).
+      * UNVERIFIED/REJECTED/FAILED -> no change (couldn't determine a match).
+    """
+    fields: list[str] = []
+    if consistency == Consistency.CONSISTENT:
+        if not user.is_verified:
+            user.is_verified = True
+            fields.append("is_verified")
+        if user.verification_attempts:
+            user.verification_attempts = 0
+            fields.append("verification_attempts")
+    elif consistency == Consistency.INCONSISTENT:
+        if user.is_verified:
+            user.is_verified = False
+            fields.append("is_verified")
+        user.verification_attempts = (user.verification_attempts or 0) + 1
+        fields.append("verification_attempts")
+    if fields:
+        user.save(update_fields=fields)

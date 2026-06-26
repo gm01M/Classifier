@@ -12,9 +12,18 @@ class SubmissionAdmin(admin.ModelAdmin):
         "country_of_origin",
         "place_of_living",
         "status",
+        "consistency",
         "created_at",
     )
-    list_filter = ("status", "gender", "country_of_origin")
+    list_filter = ("status", "consistency", "gender", "country_of_origin")
     search_fields = ("name", "description", "country_of_origin", "place_of_living")
-    readonly_fields = ("id", "photo_key", "classification_result", "created_at", "updated_at")
+    readonly_fields = (
+        "id",
+        "photo_key",
+        "classification_result",
+        "consistency",
+        "verification",
+        "created_at",
+        "updated_at",
+    )
     date_hierarchy = "created_at"

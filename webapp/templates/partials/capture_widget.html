@@ -1,0 +1,81 @@
+{% comment %}
+Reusable capture widget: live camera OR file upload, both POST a 'photo' to
+`capture_url` (JSON {redirect} on success). Context: capture_url, submit_label.
+{% endcomment %}
+{% csrf_token %}
+<div id="camwrap" class="camwrap">
+  <video id="cam" autoplay playsinline muted></video>
+  <canvas id="canvas" hidden></canvas>
+</div>
+<p id="cam-note" class="muted" hidden></p>
+<p id="cap-error" class="error" hidden></p>
+
+<div class="row" style="gap:.75rem;margin-top:1rem;align-items:center">
+  <button id="cap-shot" class="primary" disabled>📸 {{ submit_label|default:"Capture & submit" }}</button>
+  <span id="cap-busy" class="muted" hidden>Uploading…</span>
+</div>
+
+<div class="upload-alt" style="margin-top:1rem">
+  <p class="muted">— or upload a photo instead —</p>
+  <input type="file" id="cap-file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp">
+  <button id="cap-upload" class="button">Upload &amp; submit</button>
+</div>
+
+<script>
+(function () {
+  const url = "{{ capture_url }}";
+  const token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+  const video = document.getElementById('cam');
+  const canvas = document.getElementById('canvas');
+  const shotBtn = document.getElementById('cap-shot');
+  const upBtn = document.getElementById('cap-upload');
+  const fileInput = document.getElementById('cap-file');
+  const busy = document.getElementById('cap-busy');
+  const err = document.getElementById('cap-error');
+  const camNote = document.getElementById('cam-note');
+  let stream = null;
+
+  const showErr = m => { err.textContent = m; err.hidden = false; };
+  const setBusy = b => { busy.hidden = !b; shotBtn.disabled = b || !stream; upBtn.disabled = b; };
+  const stopCam = () => { if (stream) stream.getTracks().forEach(t => t.stop()); };
+
+  function submit(blob, filename) {
+    err.hidden = true; setBusy(true);
+    const fd = new FormData(); fd.append('photo', blob, filename || 'photo.jpg');
+    fetch(url, { method: 'POST', headers: { 'X-CSRFToken': token }, body: fd })
+      .then(r => r.json())
+      .then(d => { if (d.redirect) { stopCam(); window.location = d.redirect; }
+                   else { showErr(d.error || 'Failed.'); setBusy(false); } })
+      .catch(e => { showErr('Network error: ' + e.message); setBusy(false); });
+  }
+
+  async function startCam() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      camNote.textContent = 'Camera not available in this browser — use upload below.';
+      camNote.hidden = false; return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      video.srcObject = stream; shotBtn.disabled = false;
+    } catch (e) {
+      camNote.textContent = 'Camera unavailable (' + e.message + ') — use upload below.';
+      camNote.hidden = false;
+    }
+  }
+
+  shotBtn.addEventListener('click', function () {
+    if (!video.videoWidth) { showErr('Camera not ready yet.'); return; }
+    canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    canvas.toBlob(b => submit(b, 'capture.jpg'), 'image/jpeg', 0.92);
+  });
+  upBtn.addEventListener('click', function () {
+    const f = fileInput.files[0];
+    if (!f) { showErr('Choose a file first.'); return; }
+    submit(f, f.name);
+  });
+
+  window.addEventListener('beforeunload', stopCam);
+  startCam();
+})();
+</script>

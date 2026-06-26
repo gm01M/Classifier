@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Identity verification{% endblock %}
+{% block content %}
+<div class="card narrow" style="max-width:560px">
+  <h1>Verify your identity</h1>
+  <p class="muted">Look at the camera and capture a photo (or upload one). We check
+    that it matches the profile you provided. You have
+    <strong>{{ attempts_remaining }}</strong> attempt{{ attempts_remaining|pluralize }} remaining.</p>
+
+  {% url 'verify:capture' as cap_url %}
+  {% include "partials/capture_widget.html" with capture_url=cap_url submit_label="Capture & verify" %}
+
+  <p class="muted">Your camera feed stays in your browser; only the captured photo
+    is sent, validated, EXIF-stripped and screened.</p>
+</div>
+{% endblock %}

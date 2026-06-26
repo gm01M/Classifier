@@ -29,6 +29,23 @@
 </div>
 
 <div class="card">
+  <h2>Verification</h2>
+  <p>Outcome:
+    <span class="badge {{ submission.consistency }}">{{ submission.get_consistency_display }}</span></p>
+  {% with v=submission.verification %}
+    {% if v %}
+    <dl class="meta">
+      <dt>Claimed age</dt><dd>{{ v.claimed_age }}</dd>
+      <dt>Predicted age</dt><dd>{{ v.predicted_age|default:"—" }} ({% if v.age_match %}match{% elif v.age_match is None %}n/a{% else %}mismatch{% endif %})</dd>
+      <dt>Claimed gender</dt><dd>{{ v.claimed_gender }}</dd>
+      <dt>Predicted gender</dt><dd>{{ v.predicted_gender|default:"—" }} ({% if v.gender_match %}match{% elif v.gender_match is None %}n/a{% else %}mismatch{% endif %})</dd>
+      {% if v.reasons %}<dt>Flags</dt><dd>{{ v.reasons|join:"; " }}</dd>{% endif %}
+    </dl>
+    {% else %}<p class="muted">Not yet verified.</p>{% endif %}
+  {% endwith %}
+</div>
+
+<div class="card">
   <h2>Classification result</h2>
   {% if submission.classification_result %}
     <table class="data">

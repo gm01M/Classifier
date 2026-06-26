@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Verifying…{% endblock %}
+{% block content %}
+<div class="card narrow" style="max-width:560px">
+  <h1>Verification</h1>
+  <div id="vstatus"
+       hx-get="{% url 'verify:status' submission.pk %}"
+       hx-trigger="load, every 1.5s"
+       hx-swap="outerHTML">
+    {% include "partials/verify_status.html" %}
+  </div>
+</div>
+{% endblock %}

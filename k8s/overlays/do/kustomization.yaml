@@ -1,0 +1,87 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# DigitalOcean (DOKS) overlay — the live deploy target.
+#
+#  * Images are pulled from DOCR (registry.digitalocean.com/gm01m-bip). The CD
+#    pipeline pins the exact per-commit tag with `kubectl set image`.
+#  * The classifier runs the REAL model on CPU (no GPU node pool): GPU
+#    nodeSelector/tolerations + nvidia.com/gpu resources are removed and
+#    MODEL_DEVICE=cpu (see patch-classifier-config.yaml). The chosen models are
+#    small ViT classifiers that run fine on CPU; this also matches the local
+#    setup where the GPU (Blackwell) isn't supported by the cu121 torch build.
+#  * Exposed over plain HTTP on the nginx-ingress LoadBalancer IP (no domain/TLS).
+#  * Single-node friendly: 1 replica each and HPA floors lowered to 1.
+namespace: photoplatform
+
+resources:
+  - ../../base
+
+images:
+  - name: ghcr.io/OWNER/photoplatform-webapp
+    newName: registry.digitalocean.com/gm01m-bip/webapp
+    newTag: latest
+  - name: ghcr.io/OWNER/photoplatform-classifier
+    newName: registry.digitalocean.com/gm01m-bip/classifier
+    newTag: latest
+
+patches:
+  # --- ConfigMap overrides (strategic merge: keys merge into base data) --------
+  - path: patch-webapp-config.yaml
+  - path: patch-classifier-config.yaml
+
+  # --- Classifier: real model on CPU, drop all GPU scheduling/resources --------
+  - target: {kind: Deployment, name: classifier}
+    patch: |
+      - op: remove
+        path: /spec/template/spec/nodeSelector
+      - op: remove
+        path: /spec/template/spec/tolerations
+      - op: remove
+        path: /spec/template/spec/containers/0/resources/requests/nvidia.com~1gpu
+      - op: remove
+        path: /spec/template/spec/containers/0/resources/limits/nvidia.com~1gpu
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: "500m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: "1536Mi"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "3"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "4Gi"
+
+  # --- Ingress: strip TLS + host so it serves on the LB IP over plain HTTP -----
+  - target: {kind: Ingress, name: photoplatform}
+    patch: |
+      - op: remove
+        path: /spec/tls
+      - op: remove
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+      - op: remove
+        path: /spec/rules/0/host
+
+  # --- Single-node sizing: 1 replica each, HPA floor = 1 ----------------------
+  - target: {kind: Deployment, name: webapp}
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target: {kind: Deployment, name: worker}
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target: {kind: HorizontalPodAutoscaler, name: webapp}
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+  - target: {kind: HorizontalPodAutoscaler, name: worker}
+    patch: |
+      - op: replace
+        path: /spec/minReplicas
+        value: 1

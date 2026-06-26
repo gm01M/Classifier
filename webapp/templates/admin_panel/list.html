@@ -26,6 +26,12 @@
       <option value="{{ value }}" {% if filter_data.status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select>
+  <select name="consistency">
+    <option value="">Any consistency</option>
+    {% for value, label in consistencies %}
+      <option value="{{ value }}" {% if filter_data.consistency == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
   <button type="submit" class="primary">Filter</button>
 </form>
 

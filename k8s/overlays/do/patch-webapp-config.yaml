@@ -1,0 +1,20 @@
+# Strategic-merge patch: override webapp config for plain-HTTP access on the
+# nginx-ingress LoadBalancer IP (no domain / no TLS). 64.225.95.6 is substituted
+# with the real load-balancer IP at setup time and committed, so every CD run
+# deploys with the correct origin (the DO LB keeps its IP for the cluster's life).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-config
+  namespace: photoplatform
+data:
+  DJANGO_ALLOWED_HOSTS: "*"
+  DJANGO_DEBUG: "0"
+  # No TLS at this tier — don't force HTTPS redirects or secure-only cookies.
+  DJANGO_SECURE_SSL_REDIRECT: "0"
+  DJANGO_SESSION_COOKIE_SECURE: "0"
+  DJANGO_CSRF_COOKIE_SECURE: "0"
+  DJANGO_SECURE_HSTS_SECONDS: "0"
+  DJANGO_CSRF_TRUSTED_ORIGINS: "http://64.225.95.6"
+  # Browser-facing S3 (presigned photo URLs) routed via the ingress /s3 path.
+  S3_PUBLIC_ENDPOINT_URL: "http://64.225.95.6/s3"

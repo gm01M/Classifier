@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Platform{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Welcome{% if user.full_name %}, {{ user.full_name }}{% endif %} 👋</h1>
+  {% if user.is_staff %}
+    <p class="verify-state ok">🛡️ Admin access</p>
+    <p class="muted">You have administrator access.
+      <a href="{% url 'admin_panel:list' %}">Open the admin panel →</a></p>
+  {% else %}
+    <p class="verify-state ok">✅ Identity verified</p>
+    <p class="muted">Your identity was verified against your profile. You now have
+      full access to the platform.</p>
+  {% endif %}
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Your profile</h2>
+    <dl class="meta">
+      <dt>Name</dt><dd>{{ user.full_name|default:"—" }}</dd>
+      <dt>Age</dt><dd>{{ user.age|default:"—" }}</dd>
+      <dt>Gender</dt><dd>{{ user.get_gender_display|default:"—" }}</dd>
+      <dt>Place of living</dt><dd>{{ user.place_of_living|default:"—" }}</dd>
+      <dt>Country of origin</dt><dd>{{ user.country_of_origin|default:"—" }}</dd>
+    </dl>
+    <a href="{% url 'accounts:profile' %}">Edit profile</a>
+  </div>
+  <div class="card">
+    <div class="row between">
+      <h2>Latest submission</h2>
+      <a class="primary button" href="{% url 'submissions:submit' %}">+ New submission</a>
+    </div>
+    {% if latest %}
+      <dl class="meta">
+        <dt>Status</dt><dd><span class="badge {{ latest.status }}">{{ latest.get_status_display }}</span></dd>
+        <dt>Consistency</dt><dd><span class="badge {{ latest.consistency }}">{{ latest.get_consistency_display }}</span></dd>
+        <dt>When</dt><dd>{{ latest.created_at|date:"Y-m-d H:i" }}</dd>
+      </dl>
+      <a href="{% url 'submissions:list' %}">View verification history →</a>
+    {% else %}
+      <p class="muted">No verification attempts yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

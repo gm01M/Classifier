@@ -1,0 +1,9 @@
+# Strategic-merge patch: run the real model on CPU (the cluster has no GPU pool).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: classifier-config
+  namespace: photoplatform
+data:
+  MODEL_DEVICE: "cpu"
+  CLASSIFIER_STUB: "0"

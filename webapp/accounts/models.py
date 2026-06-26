@@ -56,10 +56,32 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
+    # Identity verification gate: the user must pass a live camera check
+    # (photo prediction consistent with their claimed profile) to access the
+    # platform. After too many failed attempts they're locked pending admin review.
+    is_verified = models.BooleanField(default=False)
+    verification_attempts = models.PositiveSmallIntegerField(default=0)
+
     @property
     def has_profile(self) -> bool:
         """True once the onboarding profile is filled in (age + gender set)."""
         return self.age is not None and bool(self.gender)
+
+    @property
+    def is_verification_locked(self) -> bool:
+        """Locked out of verification after exhausting the retry limit."""
+        from django.conf import settings
+
+        return (
+            not self.is_verified
+            and self.verification_attempts >= settings.MAX_VERIFICATION_ATTEMPTS
+        )
+
+    @property
+    def attempts_remaining(self) -> int:
+        from django.conf import settings
+
+        return max(0, settings.MAX_VERIFICATION_ATTEMPTS - self.verification_attempts)
 
     objects = UserManager()
 

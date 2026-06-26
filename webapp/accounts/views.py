@@ -25,7 +25,8 @@ class RegisterView(View):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect("submissions:list")
+            # Straight into identity verification after onboarding.
+            return redirect("verify:start")
         return render(request, self.template_name, {"form": form})
 
 

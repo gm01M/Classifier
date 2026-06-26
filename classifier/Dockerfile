@@ -19,13 +19,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         bash curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Base API deps (always). Then optionally the heavy CUDA ML stack.
-# Build a lightweight stub-only image with: --build-arg INSTALL_TORCH=false
+# Base API deps (always). Then optionally the heavy ML stack.
+#   INSTALL_TORCH=false              -> lightweight stub-only image (no torch).
+#   TORCH_INDEX_URL=.../whl/cu121    -> GPU build (default; standard NVIDIA GPUs).
+#   TORCH_INDEX_URL=.../whl/cpu      -> CPU build (smaller; also use for GPUs
+#                                       too new for the cu121 kernels, e.g. Blackwell).
 ARG INSTALL_TORCH=true
+ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu121
 COPY requirements.txt requirements-ml.txt ./
 RUN pip install -r requirements.txt \
     && if [ "$INSTALL_TORCH" = "true" ]; then \
-         pip install --extra-index-url https://download.pytorch.org/whl/cu121 -r requirements-ml.txt; \
+         pip install --extra-index-url "$TORCH_INDEX_URL" -r requirements-ml.txt; \
        fi
 
 COPY . .

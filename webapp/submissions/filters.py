@@ -15,10 +15,20 @@ class SubmissionFilter(django_filters.FilterSet):
     # Free-text search across name + description.
     q = django_filters.CharFilter(method="filter_q")
     status = django_filters.CharFilter(field_name="status")
+    consistency = django_filters.CharFilter(field_name="consistency")
 
     class Meta:
         model = Submission
-        fields = ["age_min", "age_max", "gender", "location", "country", "status", "q"]
+        fields = [
+            "age_min",
+            "age_max",
+            "gender",
+            "location",
+            "country",
+            "status",
+            "consistency",
+            "q",
+        ]
 
     def filter_q(self, queryset, name, value):
         from django.db.models import Q

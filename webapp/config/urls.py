@@ -34,6 +34,7 @@ urlpatterns = [
     path("api/", include("submissions.api_urls")),
     # HTMX UI
     path("accounts/", include("accounts.urls")),
+    path("verify/", include("submissions.verify_urls")),
     path("admin-panel/", include("submissions.admin_urls")),
     path("", include("submissions.urls")),
     # Django admin

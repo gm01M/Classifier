@@ -16,7 +16,7 @@ from django.views import View
 from common.storage import presigned_get_url
 
 from .filters import SubmissionFilter
-from .models import Gender, Status, Submission
+from .models import Consistency, Gender, Status, Submission
 
 staff_required = user_passes_test(lambda u: u.is_authenticated and u.is_staff)
 
@@ -39,6 +39,7 @@ class AdminSubmissionListView(View):
             "filter_data": request.GET,
             "genders": Gender.choices,
             "statuses": Status.choices,
+            "consistencies": Consistency.choices,
         }
         # HTMX requests get just the table partial for live filtering.
         if request.headers.get("HX-Request"):

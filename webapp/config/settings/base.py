@@ -139,7 +139,7 @@ PASSWORD_HASHERS = [
 ]
 
 LOGIN_URL = "accounts:login"
-LOGIN_REDIRECT_URL = "submissions:list"
+LOGIN_REDIRECT_URL = "submissions:home"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
 # -----------------------------------------------------------------------------
@@ -192,6 +192,9 @@ S3_SIGNED_URL_TTL = env.int("S3_SIGNED_URL_TTL", default=900)
 # -----------------------------------------------------------------------------
 CLASSIFIER_URL = env("CLASSIFIER_URL", default="http://classifier:8000")
 CLASSIFIER_TIMEOUT = env.int("CLASSIFIER_TIMEOUT", default=60)
+
+# Identity-verification gate: failed camera checks allowed before lock-out.
+MAX_VERIFICATION_ATTEMPTS = env.int("MAX_VERIFICATION_ATTEMPTS", default=3)
 
 # -----------------------------------------------------------------------------
 # Upload safety limits (see docs/safety.md)
