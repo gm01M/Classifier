@@ -1,0 +1,42 @@
+Assessment Task: Photo Classification Platform (Microservices + Docker + CI/CD)
+Goal
+Build a cloud-deployable, web-based platform where:
+1. A user can register/login, upload a photo and fill in fields with additional characteristics.
+2. An admin panel can filter, search, and retrieve submitted records.
+
+Minimum requirement: at least two microservices, containerized with Docker and instructions.
+Functional Requirements
+User Journey:
+- User registration and login
+- Profile submission with photo upload and metadata:
+  name, age, place of living, gender, country of origin, optional description
+- Store metadata in a database and photos in a storage layer
+- Return a classification result for each submission
+- Add safety rules (the applicant can decide where and how many), explain what, where and why you implemented in the instructions
+
+Admin Panel:
+- Admin-only access
+- List and filter submissions by age, gender, location, and country
+- View metadata, photo reference, classification result, timestamps
+Technical Requirements
+ - Python Backend -clear API design, validation and documentation
+ - Database – justify the choice(s) and the configurations
+- Schema design, migrations, indexing
+- Security
+- Microservices & Docker:
+
+Cloud Deployable:
+- Kubernetes strategy
+- Notes on scaling, secrets, and observability
+Required Endpoints – clear choice and documentation (Swagger is nice to have)
+CI/CD Requirements
+- CI pipeline with linting, tests, Docker image build
+- Push images to a container registry
+- Deployment step (Kubernetes)
+
+Deliverables
+- GitHub repository with source code and documentation
+- docker-compose and environment examples
+- CI/CD configuration (could be explain not implemented)
+- Screen recording demonstrating setup, usage, and architecture
+- Create a block diagram of the architecture using draw.io or similar visualization tool to summarize and explain the proposal, ways of communication, etc

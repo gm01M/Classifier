@@ -1,0 +1,120 @@
+# =============================================================================
+# Photo Classification Platform — full local stack.
+#
+#   cp .env.example .env        # adjust host ports/secrets if you like
+#   docker compose up --build
+#
+# Host ports default to the uncommon 47xxx range (see .env) to avoid clashing
+# with other projects. To enable the GPU for the classifier, add the override:
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+# =============================================================================
+
+name: photoplatform
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-photoplatform}
+      POSTGRES_USER: ${POSTGRES_USER:-photo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-photo-dev-password}
+    ports:
+      - "${POSTGRES_HOST_PORT:-47432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-photo} -d ${POSTGRES_DB:-photoplatform}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_HOST_PORT:-47379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minio-dev-password}
+    ports:
+      - "${MINIO_API_HOST_PORT:-47900}:9000"      # S3 API
+      - "${MINIO_CONSOLE_HOST_PORT:-47901}:9001"  # web console
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  classifier:
+    build:
+      context: ./classifier
+      args:
+        # INSTALL_TORCH=false builds a lightweight stub-only image (no CUDA stack).
+        INSTALL_TORCH: ${INSTALL_TORCH:-true}
+    image: photoplatform/classifier:dev
+    env_file: .env
+    environment:
+      # Real model by default. MODEL_DEVICE=auto uses the GPU when exposed (see
+      # docker-compose.gpu.yml) and transparently falls back to CPU otherwise.
+      # Set CLASSIFIER_STUB=1 in .env for a fast, dependency-free dummy classifier.
+      CLASSIFIER_STUB: ${CLASSIFIER_STUB:-0}
+    ports:
+      - "${CLASSIFIER_HOST_PORT:-47088}:8000"
+    volumes:
+      - modelcache:/models/.hf_cache
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 120s
+
+  webapp:
+    build: ./webapp
+    image: photoplatform/webapp:dev
+    command: ["web"]
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    ports:
+      - "${WEB_HOST_PORT:-47080}:8000"
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      minio: {condition: service_healthy}
+      classifier: {condition: service_started}
+
+  worker:
+    build: ./webapp
+    image: photoplatform/webapp:dev
+    command: ["worker"]
+    env_file: .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+    # Override the image's HTTP healthcheck: the worker runs Celery, not gunicorn.
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      minio: {condition: service_healthy}
+      classifier: {condition: service_started}
+
+volumes:
+  pgdata:
+  miniodata:
+  modelcache:

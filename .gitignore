@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.python-version
+
+# Django
+*.log
+db.sqlite3
+staticfiles/
+mediafiles/
+local_settings.py
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.cache/
+.ruff_cache/
+
+# ML model cache
+.hf_cache/
+*.onnx
+*.bin
+models/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Office lock files
+.~lock.*#

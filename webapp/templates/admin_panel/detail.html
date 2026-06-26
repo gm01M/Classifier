@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Admin · {{ submission.name }}{% endblock %}
+{% block content %}
+<div class="row between">
+  <h1>{{ submission.name }}</h1>
+  <a href="{% url 'admin_panel:list' %}">&larr; Back to list</a>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Photo reference</h2>
+    <img class="photo" src="{{ photo_url }}" alt="submission photo">
+    <p class="muted">Object key: <code>{{ submission.photo_key }}</code></p>
+  </div>
+  <div class="card">
+    <h2>Metadata</h2>
+    <dl class="meta">
+      <dt>Owner</dt><dd>{{ submission.owner.email }}</dd>
+      <dt>Age</dt><dd>{{ submission.age }}</dd>
+      <dt>Gender</dt><dd>{{ submission.get_gender_display }}</dd>
+      <dt>Place of living</dt><dd>{{ submission.place_of_living }}</dd>
+      <dt>Country of origin</dt><dd>{{ submission.country_of_origin }}</dd>
+      <dt>Description</dt><dd>{{ submission.description|default:"—" }}</dd>
+      <dt>Status</dt><dd><span class="badge {{ submission.status }}">{{ submission.get_status_display }}</span></dd>
+      <dt>Created</dt><dd>{{ submission.created_at|date:"Y-m-d H:i:s" }}</dd>
+      <dt>Updated</dt><dd>{{ submission.updated_at|date:"Y-m-d H:i:s" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Classification result</h2>
+  {% if submission.classification_result %}
+    <table class="data">
+      <thead><tr><th>Attribute</th><th>Prediction</th><th>Confidence</th></tr></thead>
+      <tbody>
+        {% for item in submission.classification_result.predictions %}
+        <tr><td>{{ item.attribute }}</td><td>{{ item.label }}</td><td>{{ item.score|floatformat:3 }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <pre class="json">{{ submission.classification_result }}</pre>
+  {% else %}
+    <p class="muted">No result ({{ submission.get_status_display }}){% if submission.error_detail %}: {{ submission.error_detail }}{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}My submissions{% endblock %}
+{% block content %}
+<div class="row between">
+  <h1>My submissions</h1>
+  <a class="primary button" href="{% url 'submissions:create' %}">+ New submission</a>
+</div>
+
+{% if submissions %}
+<table class="data">
+  <thead>
+    <tr><th>Name</th><th>Age</th><th>Gender</th><th>Country</th><th>Status</th><th>Created</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for s in submissions %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.age }}</td>
+      <td>{{ s.get_gender_display }}</td>
+      <td>{{ s.country_of_origin }}</td>
+      <td><span class="badge {{ s.status }}">{{ s.get_status_display }}</span></td>
+      <td>{{ s.created_at|date:"Y-m-d H:i" }}</td>
+      <td><a href="{% url 'submissions:detail' s.pk %}">View</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No submissions yet. Create your first one.</p>
+{% endif %}
+{% endblock %}

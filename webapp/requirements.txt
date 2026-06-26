@@ -1,0 +1,19 @@
+# Runtime dependencies for the webapp (Django + DRF + HTMX + Celery worker)
+Django==5.1.4
+djangorestframework==3.15.2
+drf-spectacular==0.28.0
+djangorestframework-simplejwt==5.3.1
+argon2-cffi==23.1.0
+django-filter==24.3
+django-environ==0.11.2
+psycopg[binary]==3.2.3
+celery==5.4.0
+redis==5.2.1
+boto3==1.35.71
+Pillow==11.0.0
+pillow-heif==0.21.0
+requests==2.32.3
+gunicorn==23.0.0
+whitenoise==6.8.2
+python-json-logger==2.0.7
+django-prometheus==2.3.1

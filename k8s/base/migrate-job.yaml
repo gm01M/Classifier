@@ -1,0 +1,28 @@
+# One-shot pre-deploy job: apply migrations, ensure the storage bucket and the
+# bootstrap admin. Run this before/with each rollout (e.g. a Helm pre-upgrade
+# hook or an Argo CD PreSync hook). Keeps migrations out of the web pods so
+# replicas never race.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: webapp-migrate
+  namespace: photoplatform
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels: {app: webapp-migrate}
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migrate
+          image: ghcr.io/OWNER/photoplatform-webapp:latest
+          command: ["bash", "-lc"]
+          args:
+            - |
+              python manage.py migrate --noinput
+              python manage.py init_storage || true
+              python manage.py ensure_admin || true
+          envFrom:
+            - configMapRef: {name: webapp-config}
+            - secretRef: {name: platform-secrets}

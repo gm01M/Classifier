@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp
+  namespace: photoplatform
+spec:
+  selector: {app: webapp}
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  namespace: photoplatform
+  labels: {app: webapp}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: webapp}
+  template:
+    metadata:
+      labels: {app: webapp}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8000"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: webapp
+          image: ghcr.io/OWNER/photoplatform-webapp:latest
+          # Migrations run in the pre-deploy Job, so pods serve gunicorn directly.
+          command: ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120"]
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef: {name: webapp-config}
+            - secretRef: {name: platform-secrets}
+          livenessProbe:
+            httpGet: {path: /healthz, port: 8000}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet: {path: /readyz, port: 8000}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: {cpu: "250m", memory: "256Mi"}
+            limits: {cpu: "1", memory: "512Mi"}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: photoplatform
+  labels: {app: worker}
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: worker}
+  template:
+    metadata:
+      labels: {app: worker}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: worker
+          image: ghcr.io/OWNER/photoplatform-webapp:latest
+          command: ["celery", "-A", "config", "worker", "--loglevel=info", "--concurrency=2"]
+          envFrom:
+            - configMapRef: {name: webapp-config}
+            - secretRef: {name: platform-secrets}
+          livenessProbe:
+            exec: {command: ["bash", "-lc", "celery -A config inspect ping -d celery@$HOSTNAME"]}
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests: {cpu: "250m", memory: "256Mi"}
+            limits: {cpu: "1", memory: "512Mi"}

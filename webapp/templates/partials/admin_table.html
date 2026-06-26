@@ -1,0 +1,45 @@
+{% comment %}Results table partial — returned standalone for HTMX filter requests.{% endcomment %}
+<p class="muted">{{ page.paginator.count }} result{{ page.paginator.count|pluralize }}</p>
+<table class="data">
+  <thead>
+    <tr>
+      <th>Name</th><th>Age</th><th>Gender</th><th>Location</th><th>Country</th>
+      <th>Status</th><th>Result</th><th>Created</th><th></th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for s in page %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{{ s.age }}</td>
+      <td>{{ s.get_gender_display }}</td>
+      <td>{{ s.place_of_living }}</td>
+      <td>{{ s.country_of_origin }}</td>
+      <td><span class="badge {{ s.status }}">{{ s.get_status_display }}</span></td>
+      <td>
+        {% if s.classification_result.predictions %}
+          {% with p=s.classification_result.predictions.0 %}{{ p.attribute }}: {{ p.label }}{% endwith %}
+        {% else %}—{% endif %}
+      </td>
+      <td>{{ s.created_at|date:"Y-m-d H:i" }}</td>
+      <td><a href="{% url 'admin_panel:detail' s.pk %}">Details</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="9" class="muted">No submissions match these filters.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if page.has_other_pages %}
+<div class="pager">
+  {% if page.has_previous %}
+    <a hx-get="{% url 'admin_panel:list' %}?{{ filter_data.urlencode }}&page={{ page.previous_page_number }}"
+       hx-target="#admin-results" href="#">&larr; Prev</a>
+  {% endif %}
+  <span>Page {{ page.number }} / {{ page.paginator.num_pages }}</span>
+  {% if page.has_next %}
+    <a hx-get="{% url 'admin_panel:list' %}?{{ filter_data.urlencode }}&page={{ page.next_page_number }}"
+       hx-target="#admin-results" href="#">Next &rarr;</a>
+  {% endif %}
+</div>
+{% endif %}

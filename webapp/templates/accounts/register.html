@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Create your account</h1>
+  <p class="muted">We collect your profile here at onboarding; each photo you submit
+    later reuses it automatically.</p>
+  <form method="post" action="{% url 'accounts:register' %}">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <h2>Account</h2>
+    <div class="grid2">
+      <label>Email {{ form.email }}{{ form.email.errors }}</label>
+      <label>Full name {{ form.full_name }}{{ form.full_name.errors }}</label>
+      <label>Password {{ form.password }}{{ form.password.errors }}</label>
+      <label>Confirm password {{ form.password_confirm }}{{ form.password_confirm.errors }}</label>
+    </div>
+    <h2>Profile</h2>
+    <div class="grid2">
+      <label>Age {{ form.age }}{{ form.age.errors }}</label>
+      <label>Gender {{ form.gender }}{{ form.gender.errors }}</label>
+      <label>Place of living {{ form.place_of_living }}{{ form.place_of_living.errors }}</label>
+      <label>Country of origin {{ form.country_of_origin }}{{ form.country_of_origin.errors }}</label>
+    </div>
+    <label>Description (optional) {{ form.description }}{{ form.description.errors }}</label>
+    <button type="submit" class="primary">Register</button>
+  </form>
+  <p class="muted">Already registered? <a href="{% url 'accounts:login' %}">Login</a></p>
+</div>
+{% endblock %}

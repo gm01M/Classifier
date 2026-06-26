@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Prod overlay. In real cloud you would typically:
+#   * Remove postgres.yaml / minio.yaml from base and use managed RDS + S3
+#     (point POSTGRES_HOST / S3_ENDPOINT_URL at the managed endpoints).
+#   * Supply platform-secrets via External Secrets / Sealed Secrets.
+# Apply with:  kubectl apply -k k8s/overlays/prod   (after the migrate Job)
+resources:
+  - ../../base
+
+patches:
+  - target: {kind: Deployment, name: webapp}
+    patch: |
+      - {op: replace, path: /spec/replicas, value: 3}
+
+images:
+  - name: ghcr.io/OWNER/photoplatform-webapp
+    newTag: "1.0.0"
+  - name: ghcr.io/OWNER/photoplatform-classifier
+    newTag: "1.0.0"

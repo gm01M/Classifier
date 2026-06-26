@@ -1,0 +1,32 @@
+{% comment %}
+Result card partial. While PENDING it re-arms the hx-trigger so the parent keeps
+polling; once DONE/FAILED/REJECTED it renders the final state and drops polling.
+{% endcomment %}
+<div id="result"
+     {% if still_pending %}hx-get="{% url 'submissions:result-partial' submission.pk %}"
+     hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <p>Status: <span class="badge {{ submission.status }}">{{ submission.get_status_display }}</span></p>
+
+  {% if submission.status == "pending" %}
+    <p class="muted">⏳ Classifying… this updates automatically.</p>
+  {% elif submission.status == "done" %}
+    <table class="data">
+      <thead><tr><th>Attribute</th><th>Prediction</th><th>Confidence</th></tr></thead>
+      <tbody>
+        {% for item in submission.classification_result.predictions %}
+        <tr>
+          <td>{{ item.attribute }}</td>
+          <td>{{ item.label }}</td>
+          <td>{{ item.score|floatformat:3 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted">Model: {{ submission.classification_result.model }}
+      · device: {{ submission.classification_result.device }}</p>
+  {% elif submission.status == "rejected" %}
+    <p class="error">🚫 Rejected by safety screening: {{ submission.error_detail }}</p>
+  {% else %}
+    <p class="error">⚠️ Classification failed: {{ submission.error_detail }}</p>
+  {% endif %}
+</div>

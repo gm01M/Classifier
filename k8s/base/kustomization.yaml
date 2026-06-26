@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: photoplatform
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  # secret.example.yaml is a TEMPLATE — supply the real Secret out-of-band
+  # (Sealed Secrets / External Secrets). Not included here on purpose.
+  - postgres.yaml
+  - redis.yaml
+  - minio.yaml
+  - migrate-job.yaml
+  - webapp.yaml
+  - classifier.yaml
+  - ingress.yaml
+  - hpa.yaml
+
+images:
+  - name: ghcr.io/OWNER/photoplatform-webapp
+    newTag: latest
+  - name: ghcr.io/OWNER/photoplatform-classifier
+    newTag: latest
+
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: photoplatform

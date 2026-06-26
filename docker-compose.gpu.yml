@@ -1,0 +1,18 @@
+# GPU override for the classifier. Requires the NVIDIA Container Toolkit.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+#
+# Reserves one NVIDIA GPU for the classifier and forces CUDA. The age/gender/NSFW
+# models fit comfortably in well under 6 GB of VRAM.
+services:
+  classifier:
+    environment:
+      CLASSIFIER_STUB: "0"
+      MODEL_DEVICE: "cuda"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]

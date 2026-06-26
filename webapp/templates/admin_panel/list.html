@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Admin · Submissions{% endblock %}
+{% block content %}
+<h1>Admin panel — submissions</h1>
+
+{# Live filter form: HTMX swaps the results table on any change. #}
+<form class="filters"
+      hx-get="{% url 'admin_panel:list' %}"
+      hx-target="#admin-results"
+      hx-trigger="submit, change delay:300ms, keyup changed delay:400ms from:input[name='q']"
+      hx-push-url="true">
+  <input type="text" name="q" placeholder="Search name/description" value="{{ filter_data.q }}">
+  <select name="gender">
+    <option value="">Any gender</option>
+    {% for value, label in genders %}
+      <option value="{{ value }}" {% if filter_data.gender == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <input type="number" name="age_min" placeholder="Age ≥" value="{{ filter_data.age_min }}">
+  <input type="number" name="age_max" placeholder="Age ≤" value="{{ filter_data.age_max }}">
+  <input type="text" name="location" placeholder="Location" value="{{ filter_data.location }}">
+  <input type="text" name="country" placeholder="Country" value="{{ filter_data.country }}">
+  <select name="status">
+    <option value="">Any status</option>
+    {% for value, label in statuses %}
+      <option value="{{ value }}" {% if filter_data.status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="primary">Filter</button>
+</form>
+
+<div id="admin-results">
+  {% include "partials/admin_table.html" %}
+</div>
+{% endblock %}

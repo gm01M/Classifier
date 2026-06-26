@@ -1,0 +1,5 @@
+# Heavy ML stack — installed only when the image is built with INSTALL_TORCH=true
+# (the default). The Dockerfile pulls the CUDA (cu121) torch build from the
+# PyTorch wheel index. Omitting these yields a lightweight stub-only image.
+torch==2.5.1
+transformers==4.47.1

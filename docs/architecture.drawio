@@ -1,0 +1,97 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="photoplatform-arch" name="Architecture">
+    <mxGraphModel dx="1100" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1300" pageHeight="760" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Title -->
+        <mxCell id="title" value="Photo Classification Platform — Architecture" style="text;html=1;fontSize=18;fontStyle=1;align=left;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="600" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- Clients -->
+        <mxCell id="client" value="User / Admin&#10;Browser (HTMX)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="40" y="320" width="150" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Ingress -->
+        <mxCell id="ingress" value="Ingress + TLS&#10;(cert-manager)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="250" y="320" width="150" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- webapp microservice container -->
+        <mxCell id="webappBox" value="webapp microservice (Django + HTMX + DRF)" style="rounded=1;whiteSpace=wrap;html=1;verticalAlign=top;fillColor=#fff2cc;strokeColor=#d6b656;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="460" y="150" width="300" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="webapp" value="Web/API + Auth/RBAC&#10;• HTMX UI (user + admin)&#10;• REST API + Swagger&#10;• validation + safety pipeline&#10;• /metrics /healthz /readyz" style="whiteSpace=wrap;html=1;align=left;fillColor=#ffffff;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="480" y="185" width="260" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- worker -->
+        <mxCell id="worker" value="worker microservice&#10;(Celery)&#10;• classify task&#10;• calls classifier" style="rounded=1;whiteSpace=wrap;html=1;align=left;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="500" y="430" width="220" height="100" as="geometry" />
+        </mxCell>
+
+        <!-- classifier -->
+        <mxCell id="classifier" value="classifier microservice&#10;FastAPI + PyTorch (GPU ≤6GB)&#10;• POST /v1/classify&#10;• age + gender models&#10;• NSFW safety gate" style="rounded=1;whiteSpace=wrap;html=1;align=left;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="820" y="420" width="260" height="120" as="geometry" />
+        </mxCell>
+
+        <!-- Postgres -->
+        <mxCell id="pg" value="PostgreSQL&#10;(metadata + indexes)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="880" y="120" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- MinIO -->
+        <mxCell id="minio" value="MinIO / S3&#10;(private photos&#10;+ presigned GET)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="120" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Redis -->
+        <mxCell id="redis" value="Redis&#10;(broker/result&#10;+ throttle cache)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="250" y="440" width="140" height="90" as="geometry" />
+        </mxCell>
+
+        <!-- Edges -->
+        <mxCell id="e1" value="HTTPS" style="endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="client" target="ingress">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" value="HTTP" style="endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="ingress" target="webapp">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="metadata (SQL)" style="endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="webapp" target="pg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="photo put + presigned" style="endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="webapp" target="minio">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="enqueue job" style="endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="webapp" target="redis">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="consume job" style="endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="redis" target="worker">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="POST image" style="endArrow=block;html=1;fontSize=11;" edge="1" parent="1" source="worker" target="classifier">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="download photo" style="endArrow=block;html=1;dashed=1;fontSize=11;" edge="1" parent="1" source="worker" target="minio">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="write result" style="endArrow=block;html=1;dashed=1;fontSize=11;" edge="1" parent="1" source="worker" target="pg">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="HTMX poll result" style="endArrow=block;html=1;dashed=1;fontSize=11;startArrow=block;" edge="1" parent="1" source="client" target="webapp">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points"><mxPoint x="115" y="120" /><mxPoint x="610" y="120" /></Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Legend -->
+        <mxCell id="legend" value="Solid = request path   ·   Dashed = async/result path&#10;Yellow = web tier · Red = GPU tier · Purple = data stores" style="text;html=1;align=left;fontSize=11;verticalAlign=middle;" vertex="1" parent="1">
+          <mxGeometry x="40" y="600" width="520" height="40" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

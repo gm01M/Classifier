@@ -1,0 +1,32 @@
+# Ingress with TLS via cert-manager. Routes the web UI/API to the webapp and
+# (optionally) the MinIO S3 endpoint under /s3 so browsers can fetch presigned
+# photo URLs. Adjust host + ingressClassName for your environment.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: photoplatform
+  namespace: photoplatform
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: ["photoplatform.example.com"]
+      secretName: photoplatform-tls
+  rules:
+    - host: photoplatform.example.com
+      http:
+        paths:
+          - path: /s3
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port: {number: 9000}
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp
+                port: {number: 8000}

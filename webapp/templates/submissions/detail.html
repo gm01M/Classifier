@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Submission · {{ submission.name }}{% endblock %}
+{% block content %}
+<div class="row between">
+  <h1>{{ submission.name }}</h1>
+  <a href="{% url 'submissions:list' %}">&larr; Back</a>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Photo</h2>
+    <img class="photo" src="{{ photo_url }}" alt="submission photo">
+  </div>
+  <div class="card">
+    <h2>Metadata</h2>
+    <dl class="meta">
+      <dt>Age</dt><dd>{{ submission.age }}</dd>
+      <dt>Gender</dt><dd>{{ submission.get_gender_display }}</dd>
+      <dt>Place of living</dt><dd>{{ submission.place_of_living }}</dd>
+      <dt>Country of origin</dt><dd>{{ submission.country_of_origin }}</dd>
+      <dt>Description</dt><dd>{{ submission.description|default:"—" }}</dd>
+      <dt>Created</dt><dd>{{ submission.created_at|date:"Y-m-d H:i" }}</dd>
+    </dl>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Classification result</h2>
+  {# Poll the result partial until classification leaves PENDING. #}
+  <div id="result"
+       hx-get="{% url 'submissions:result-partial' submission.pk %}"
+       hx-trigger="load, every 2s"
+       hx-swap="outerHTML">
+    {% include "partials/result_card.html" %}
+  </div>
+</div>
+{% endblock %}

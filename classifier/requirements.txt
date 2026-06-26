@@ -1,0 +1,8 @@
+# Classifier base runtime deps (no ML stack — see requirements-ml.txt).
+# These are enough to serve the API in stub mode.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pillow==11.0.0
+pydantic==2.10.4
+prometheus-fastapi-instrumentator==7.0.0
