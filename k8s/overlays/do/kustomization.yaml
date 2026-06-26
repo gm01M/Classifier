@@ -65,6 +65,12 @@ patches:
       - op: replace
         path: /spec/tls/0/hosts/0
         value: classifier.mladendev.space
+      # Route the S3 bucket path straight to MinIO so presigned GET URLs
+      # (signed against the domain root, path-style: /photos/<key>) match what
+      # MinIO receives. No prefix rewrite -> SigV4 signature stays valid.
+      - op: replace
+        path: /spec/rules/0/http/paths/0/path
+        value: /photos
 
   # --- Single-node sizing: 1 replica each, HPA floor = 1 ----------------------
   - target: {kind: Deployment, name: webapp}

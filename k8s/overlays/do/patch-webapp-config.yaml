@@ -17,5 +17,7 @@ data:
   # Modest HSTS (1h) — conservative on a dev domain (base sets includeSubDomains).
   DJANGO_SECURE_HSTS_SECONDS: "3600"
   DJANGO_CSRF_TRUSTED_ORIGINS: "https://classifier.mladendev.space"
-  # Browser-facing S3 (presigned photo URLs) over HTTPS to avoid mixed-content.
-  S3_PUBLIC_ENDPOINT_URL: "https://classifier.mladendev.space/s3"
+  # Browser-facing S3 (presigned photo URLs) over HTTPS. Signed against the
+  # domain root so path-style URLs are https://classifier.mladendev.space/<bucket>/<key>
+  # (bucket = "photos"), which the ingress routes straight to MinIO.
+  S3_PUBLIC_ENDPOINT_URL: "https://classifier.mladendev.space"
