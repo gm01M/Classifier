@@ -54,15 +54,17 @@ patches:
         path: /spec/template/spec/containers/0/resources/limits/memory
         value: "4Gi"
 
-  # --- Ingress: strip TLS + host so it serves on the LB IP over plain HTTP -----
+  # --- Ingress: serve the app on the real domain with Let's Encrypt TLS --------
+  # (cert-manager issues the cert via the letsencrypt-prod ClusterIssuer; the
+  # annotation + secretName come from the base ingress.)
   - target: {kind: Ingress, name: photoplatform}
     patch: |
-      - op: remove
-        path: /spec/tls
-      - op: remove
-        path: /metadata/annotations/cert-manager.io~1cluster-issuer
-      - op: remove
+      - op: replace
         path: /spec/rules/0/host
+        value: classifier.mladendev.space
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: classifier.mladendev.space
 
   # --- Single-node sizing: 1 replica each, HPA floor = 1 ----------------------
   - target: {kind: Deployment, name: webapp}

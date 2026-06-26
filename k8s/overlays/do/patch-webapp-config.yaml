@@ -1,20 +1,20 @@
-# Strategic-merge patch: override webapp config for plain-HTTP access on the
-# nginx-ingress LoadBalancer IP (no domain / no TLS). 64.225.95.6 is substituted
-# with the real load-balancer IP at setup time and committed, so every CD run
-# deploys with the correct origin (the DO LB keeps its IP for the cluster's life).
+# Strategic-merge patch: serve on the real domain over HTTPS (Let's Encrypt cert
+# issued by cert-manager). The live camera (getUserMedia) requires a secure
+# context, so the canonical origin is https://classifier.mladendev.space.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: webapp-config
   namespace: photoplatform
 data:
+  # "*" keeps kubelet httpGet health probes (Host = pod IP) working.
   DJANGO_ALLOWED_HOSTS: "*"
   DJANGO_DEBUG: "0"
-  # No TLS at this tier — don't force HTTPS redirects or secure-only cookies.
+  # SSL redirect/secure cookies enabled once the cert is confirmed live.
   DJANGO_SECURE_SSL_REDIRECT: "0"
   DJANGO_SESSION_COOKIE_SECURE: "0"
   DJANGO_CSRF_COOKIE_SECURE: "0"
   DJANGO_SECURE_HSTS_SECONDS: "0"
-  DJANGO_CSRF_TRUSTED_ORIGINS: "http://64.225.95.6"
-  # Browser-facing S3 (presigned photo URLs) routed via the ingress /s3 path.
-  S3_PUBLIC_ENDPOINT_URL: "http://64.225.95.6/s3"
+  DJANGO_CSRF_TRUSTED_ORIGINS: "https://classifier.mladendev.space,http://classifier.mladendev.space"
+  # Browser-facing S3 (presigned photo URLs) over HTTPS to avoid mixed-content.
+  S3_PUBLIC_ENDPOINT_URL: "https://classifier.mladendev.space/s3"
