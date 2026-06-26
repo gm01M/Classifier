@@ -19,6 +19,9 @@ PASSWORD_HASHERS = [
 # TLS is terminated at the ingress; trust the forwarded proto header.
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
+# Kubelet probes hit the pod over plain HTTP (no X-Forwarded-Proto); exempt the
+# health endpoints so the redirect doesn't short-circuit the real DB/model checks.
+SECURE_REDIRECT_EXEMPT = [r"^healthz$", r"^readyz$"]
 SESSION_COOKIE_SECURE = env.bool("DJANGO_SESSION_COOKIE_SECURE", default=True)
 CSRF_COOKIE_SECURE = env.bool("DJANGO_CSRF_COOKIE_SECURE", default=True)
 SESSION_COOKIE_HTTPONLY = True
